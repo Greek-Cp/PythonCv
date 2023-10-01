@@ -5,7 +5,7 @@ import cv2
 import numpy as np
 import sys
 
-class SelectableQLabel(QLabel):
+class SelectableQLabel(QLabel): 
     def __init__(self, mainWindow, parent=None):
         super(SelectableQLabel, self).__init__(parent)
         self.startPoint = QPoint()
