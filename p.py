@@ -78,17 +78,25 @@ class Ui_MainWindow(object):
         self.menuMorfologi.setObjectName("menuMorfologi")
              
         #untuk menambahkan object pada menu  bar
-        self.menuAnjing = QtWidgets.QMenu(self.menubar)
-        self.menuAnjing.setObjectName("menuAnjing")
+        self.menuUniform = QtWidgets.QMenu(self.menubar)
+        self.menuUniform.setObjectName("menuUniform")
+        
         #untuk menambahkan item berupa menu 
-        self.menuTest = QtWidgets.QMenu(self.menuAnjing)
+        self.menuTest = QtWidgets.QMenu(self.menuUniform)
         self.menuTest.setObjectName("menuTest")
+        
+        self.actionA = QtWidgets.QAction(MainWindow)
+        self.actionA.setObjectName("actionSquareopant")
+        self.menuTest.addAction(self.actionA)
+        self.actionA.triggered.connect(self.sobelEdgeDetection)
         self.menuSubTest = QtWidgets.QMenu(self.menuTest);
         self.menuSubTest.setObjectName("subMenuTest")
+        
+        
         #menambahkan item sub menu berupa  action
-        self.actionTestMenu = QtWidgets.QAction(MainWindow)  
+        self.actionUniformScaling = QtWidgets.QAction(MainWindow)  
         #menambahkan action ke menu
-        self.menuAnjing.addAction(self.actionTestMenu)
+        self.menuUniform.addAction(self.actionUniformScaling)
         
         self.menuErosion = QtWidgets.QMenu(self.menuMorfologi)
         self.menuErosion.setObjectName("menuErosion")
@@ -258,7 +266,7 @@ class Ui_MainWindow(object):
         self.menuRGB_to_Grayscale.addAction(self.actionLightness)
         self.menuRGB_to_Grayscale.addAction(self.actionLuminance)
         self.menuBrightness.addAction(self.actionContrast)
-        self.menuBit_Depth.addAction(self.action1_bit)
+        self.menuBit_Depth.addAction(self.action1_bit) 
         self.menuBit_Depth.addAction(self.action2_bit)
         self.menuBit_Depth.addAction(self.action3_bit)
         self.menuBit_Depth.addAction(self.action4_bit)
@@ -307,7 +315,7 @@ class Ui_MainWindow(object):
         self.menuMorfologi.addAction(self.menuOpening.menuAction())
         self.menuMorfologi.addAction(self.menuClosing.menuAction())
         
-        self.menuAnjing.addAction(self.menuTest.menuAction())
+        self.menuUniform.addAction(self.menuTest.menuAction())
 
         self.menuFile.addAction(self.actionOpen_File)
         self.menuFile.addAction(self.actionSave_As)
@@ -324,7 +332,7 @@ class Ui_MainWindow(object):
         self.menubar.addAction(self.menuIler.menuAction())
         self.menubar.addAction(self.menuEdge_Detection.menuAction())
         self.menubar.addAction(self.menuMorfologi.menuAction())
-        self.menubar.addAction(self.menuAnjing.menuAction())
+        self.menubar.addAction(self.menuUniform.menuAction())
         
         self.actionRobert.triggered.connect(self.RobertFilter)
         self.actionPrewitt.triggered.connect(self.prewitt)
@@ -371,12 +379,13 @@ class Ui_MainWindow(object):
 
         
         #untuk menambahkan nama pada menu item 
-        self.menuAnjing.setTitle(_translate("MainWindow","Anjing"))
-        self.menuTest.setTitle(_translate("MainWindow","test"))
+        self.menuUniform.setTitle(_translate("MainWindow","Uniform"))
+        self.menuTest.setTitle(_translate("MainWindow","New Sub Menu"))
         self.menuSubTest.setTitle(_translate("MainWindow","test inside"))
         #untuk mengeset nama action
-        self.actionTestMenu.setText(_translate("MainWindow","asu"))
-        
+        self.actionUniformScaling.setText(_translate("MainWindow","Uniform Scaling"))
+        #untuk mengeset nama action
+        self.actionA.setText(_translate("MainWindow","Action Tes"))
         
         self.menuErosion.setTitle(_translate("MainWindow", "Erosion"))
         self.menuDilation.setTitle(_translate("MainWindow", "Dilation"))
