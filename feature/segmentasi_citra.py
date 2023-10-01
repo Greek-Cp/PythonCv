@@ -120,60 +120,108 @@ class Ui_MainWindow(QMainWindow):
             self.afterImageView.setPixmap(pixmap)
     def binary_threshold(self):
         if hasattr(self, 'image'):
-            gray = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
-            _, self.processed_image = cv2.threshold(gray, 128, 255, cv2.THRESH_BINARY)
-            self.show_image(cv2.cvtColor(self.processed_image, cv2.COLOR_GRAY2BGR), 'after')
+            # Convert image to grayscale
+            r, g, b = self.image[:,:,0], self.image[:,:,1], self.image[:,:,2]
+            gray = (0.2989 * r + 0.5870 * g + 0.1140 * b).astype(np.uint8)
+
+            # Apply binary thresholding
+            self.processed_image = np.where(gray >= 128, 255, 0).astype(np.uint8)
+
+            # Convert back to 3-channel image
+            self.processed_image = np.stack([self.processed_image] * 3, axis=2)
+            self.show_image(self.processed_image, 'after')
             QMessageBox.information(self, 'Success', 'Binary Thresholding Applied!')
 
     def otsu_threshold(self):
         if hasattr(self, 'image'):
-            gray = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
-            _, self.processed_image = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-            self.show_image(cv2.cvtColor(self.processed_image, cv2.COLOR_GRAY2BGR), 'after')
+            # Convert image to grayscale
+            r, g, b = self.image[:,:,0], self.image[:,:,1], self.image[:,:,2]
+            gray = (0.2989 * r + 0.5870 * g + 0.1140 * b).astype(np.uint8)
+
+            # Compute histogram
+            hist = np.histogram(gray, bins=np.arange(0, 256), range=(0, 255))[0]
+
+            # Compute Otsu threshold
+            total = gray.size
+            current_max, threshold = 0, 0
+            sumT, sumF, countB, countF = 0, np.sum(hist), 0, total
+            for i in range(0, 256):
+                countB += hist[i]
+                countF = total - countB
+                if countF == 0:
+                    break
+                sumT += i * hist[i]
+                mB = sumT / countB
+                mF = (sumF - sumT) / countF
+                varBetween = countB * countF * (mB - mF) ** 2
+                if varBetween > current_max:
+                    current_max, threshold = varBetween, i
+
+            # Apply Otsu thresholding
+            self.processed_image = np.where(gray > threshold, 255, 0).astype(np.uint8)
+
+            # Convert back to 3-channel image
+            self.processed_image = np.stack([self.processed_image] * 3, axis=2)
+            self.show_image(self.processed_image, 'after')
             QMessageBox.information(self, 'Success', 'Otsu Thresholding Applied!')
     def contour_based_segmentation(self):
         if hasattr(self, 'image'):
-            # Convert the image to grayscale
-            gray = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
+            r, g, b = self.image[:,:,0], self.image[:,:,1], self.image[:,:,2]
+            gray = (0.2989 * r + 0.5870 * g + 0.1140 * b).astype(np.uint8)
 
-            # Apply Gaussian blur to reduce noise and improve contour detection
-            blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+            # Gaussian blur for denoising
+            blurred = ndimage.gaussian_filter(gray, sigma=1.0)
 
-            # Detect contours in the image
-            contours, _ = cv2.findContours(blurred, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            # Use Sobel operators to get gradients
+            sx = ndimage.sobel(blurred, axis=0, mode='constant')
+            sy = ndimage.sobel(blurred, axis=1, mode='constant')
+            sobel = np.hypot(sx, sy)
 
-            if len(contours) > 0:
-                # Create a black image to draw the contours on
-                segmented_image = np.zeros_like(self.image)
+            # Binarize
+            segmented_image = (sobel > np.percentile(sobel, 90)).astype(np.uint8) * 255
 
-                # Draw the detected contours on the segmented image
-                cv2.drawContours(segmented_image, contours, -1, (0, 255, 0), 2)
-
-                self.processed_image = segmented_image
-                self.show_image(self.processed_image, 'after')
-                QMessageBox.information(self, 'Success', 'Contour-Based Segmentation Applied!')
-            else:
-                QMessageBox.warning(self, 'Warning', 'No contours found in the image.')
+            self.processed_image = np.stack([segmented_image] * 3, axis=2)
+            self.show_image(self.processed_image, 'after')
+            QMessageBox.information(self, 'Success', 'Contour-Based Segmentation Applied!')
+        else:
+            QMessageBox.warning(self, 'Warning', 'No image loaded.')
 
 
     def manual_watershed(self):
         if hasattr(self, 'image'):
-            gray = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
-            ret, thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+            r, g, b = self.image[:,:,0], self.image[:,:,1], self.image[:,:,2]
+            gray = (0.2989 * r + 0.5870 * g + 0.1140 * b).astype(np.uint8)
+
+            # Get binary image
+            threshold = np.percentile(gray, 50)
+            binary = (gray > threshold).astype(np.uint8)
+
+            # Dilation
             kernel = np.ones((3, 3), np.uint8)
-            sure_bg = cv2.dilate(thresh, kernel, iterations=3)
-            dist_transform = cv2.distanceTransform(thresh, cv2.DIST_L2, 5)
-            _, sure_fg = cv2.threshold(dist_transform, 0.7 * dist_transform.max(), 255, 0)
-            sure_fg = np.uint8(sure_fg)
-            unknown = cv2.subtract(sure_bg, sure_fg)
-            _, markers = cv2.connectedComponents(sure_fg)
-            markers = markers + 1
-            markers[unknown == 255] = 0
-            markers = cv2.watershed(self.image, markers)
+            sure_bg = ndimage.binary_dilation(binary, structure=kernel, iterations=3).astype(np.uint8)
+
+            # Distance transform
+            dist_transform = ndimage.distance_transform_edt(binary)
+
+            # Get sure foreground
+            sure_fg = (dist_transform > 0.7 * dist_transform.max()).astype(np.uint8)
+
+            # Unknown region
+            unknown = sure_bg - sure_fg
+
+            # Watershed
+            markers, _ = ndimage.label(sure_fg)
+            markers += 1
+            markers[unknown == 1] = 0
+            markers = ndimage.watershed_ift(input=sure_bg, markers=markers)
+            
             self.processed_image = self.image.copy()
             self.processed_image[markers == -1] = [0, 0, 255]
+            
             self.show_image(self.processed_image, 'after')
             QMessageBox.information(self, 'Success', 'Manual Watershed Applied!')
+        else:
+            QMessageBox.warning(self, 'Warning', 'No image loaded.')
 
     def manual_kmeans(self):
         if hasattr(self, 'image'):

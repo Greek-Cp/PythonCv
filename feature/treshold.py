@@ -65,9 +65,14 @@ class Ui_MainWindow(QMainWindow):
         
     def threshold_image(self, method):
         if hasattr(self, 'image'):
-            gray = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
+            # Convert image to grayscale
+            r, g, b = self.image[:,:,0], self.image[:,:,1], self.image[:,:,2]
+            gray = 0.2989 * r + 0.5870 * g + 0.1140 * b
+            gray = gray.astype(np.uint8)
+            
             output = np.zeros_like(gray)
-
+            
+            # Apply thresholding
             for i in range(gray.shape[0]):
                 for j in range(gray.shape[1]):
                     pixel = gray[i, j]
@@ -85,10 +90,10 @@ class Ui_MainWindow(QMainWindow):
                         output[i, j] = pixel if pixel >= 128 else 0
                     elif method == "ZERO_BASED_BINARY_INV":
                         output[i, j] = pixel if pixel < 128 else 0
-
-            self.processed_image = cv2.cvtColor(output, cv2.COLOR_GRAY2BGR)
+            
+            # Convert back to 3-channel image
+            self.processed_image = np.stack([output, output, output], axis=2)
             self.show_image(self.processed_image, 'after')
-
 
     def open_image(self):
         options = QFileDialog.Options()
