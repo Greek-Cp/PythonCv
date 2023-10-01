@@ -39,7 +39,56 @@ class Ui_MainWindow(QMainWindow):
         self.afterImageView.setStyleSheet("border: 2px solid black;")
         grid_layout.addWidget(self.afterImageView, 0, 1)
         
+        self.menuThreshold = self.menubar.addMenu("Threshold")
+
+        self.actionBinary = self.menuThreshold.addAction("Binary")
+        self.actionBinary.triggered.connect(lambda: self.threshold_image("BINARY"))
+
+        self.actionBinary_Inv = self.menuThreshold.addAction("Binary Inverted")
+        self.actionBinary_Inv.triggered.connect(lambda: self.threshold_image("BINARY_INV"))
+
+        self.actionTrunc = self.menuThreshold.addAction("Truncate")
+        self.actionTrunc.triggered.connect(lambda: self.threshold_image("TRUNC"))
+
+        self.actionToZero = self.menuThreshold.addAction("To Zero")
+        self.actionToZero.triggered.connect(lambda: self.threshold_image("TOZERO"))
+
+        self.actionToZero_Inv = self.menuThreshold.addAction("To Zero Inverted")
+        self.actionToZero_Inv.triggered.connect(lambda: self.threshold_image("TOZERO_INV"))
+
+        self.actionZeroBasedBinary = self.menuThreshold.addAction("Zero-Based Binary")
+        self.actionZeroBasedBinary.triggered.connect(lambda: self.threshold_image("ZERO_BASED_BINARY"))
+
+        self.actionZeroBasedBinary_Inv = self.menuThreshold.addAction("Zero-Based Binary Inverted")
+        self.actionZeroBasedBinary_Inv.triggered.connect(lambda: self.threshold_image("ZERO_BASED_BINARY_INV"))
+            
         
+    def threshold_image(self, method):
+        if hasattr(self, 'image'):
+            gray = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
+            output = np.zeros_like(gray)
+
+            for i in range(gray.shape[0]):
+                for j in range(gray.shape[1]):
+                    pixel = gray[i, j]
+                    if method == "BINARY":
+                        output[i, j] = 255 if pixel >= 128 else 0
+                    elif method == "BINARY_INV":
+                        output[i, j] = 0 if pixel >= 128 else 255
+                    elif method == "TRUNC":
+                        output[i, j] = min(pixel, 128)
+                    elif method == "TOZERO":
+                        output[i, j] = pixel if pixel >= 128 else 0
+                    elif method == "TOZERO_INV":
+                        output[i, j] = pixel if pixel < 128 else 0
+                    elif method == "ZERO_BASED_BINARY":
+                        output[i, j] = pixel if pixel >= 128 else 0
+                    elif method == "ZERO_BASED_BINARY_INV":
+                        output[i, j] = pixel if pixel < 128 else 0
+
+            self.processed_image = cv2.cvtColor(output, cv2.COLOR_GRAY2BGR)
+            self.show_image(self.processed_image, 'after')
+
 
     def open_image(self):
         options = QFileDialog.Options()
