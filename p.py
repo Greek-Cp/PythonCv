@@ -115,23 +115,24 @@ class Ui_MainWindow(QMainWindow):
         self.menuUniform = QtWidgets.QMenu(self.menubar)
         self.menuUniform.setObjectName("menuUniform")
         
-        #untuk menambahkan item berupa menu 
-        self.menuTest = QtWidgets.QMenu(self.menuUniform)
-        self.menuTest.setObjectName("menuTest")
+     
         
         self.actionA = QtWidgets.QAction(MainWindow)
         self.actionA.setObjectName("actionSquareopant")
-        self.menuTest.addAction(self.actionA)
-        self.actionA.triggered.connect(self.sobelEdgeDetection)
-        self.menuSubTest = QtWidgets.QMenu(self.menuTest);
-        self.menuSubTest.setObjectName("subMenuTest")
+     
         
         
         #menambahkan item sub menu berupa  action
         self.actionUniformScaling = QtWidgets.QAction(MainWindow)  
         #menambahkan action ke menu
         self.menuUniform.addAction(self.actionUniformScaling)
-        
+        py_files = ['crop.py', 'dilatasi.py', 'morfologi.py', 'ROI.py', 'segmentasi_citra.py', 'translasi.py', 'treshold.py', 'unsharp_masking.py']
+        for file in py_files:
+            # Removing .py extension
+            name = os.path.splitext(file)[0]
+            action = QAction(name, self)
+            action.triggered.connect(lambda checked, file=file: self.runPythonScript(file))
+            self.menuUniform.addAction(action)
         self.menuErosion = QtWidgets.QMenu(self.menuMorfologi)
         self.menuErosion.setObjectName("menuErosion")
         self.menuDilation = QtWidgets.QMenu(self.menuMorfologi)
@@ -348,8 +349,7 @@ class Ui_MainWindow(QMainWindow):
         self.menuMorfologi.addAction(self.menuDilation.menuAction())
         self.menuMorfologi.addAction(self.menuOpening.menuAction())
         self.menuMorfologi.addAction(self.menuClosing.menuAction())
-        
-        self.menuUniform.addAction(self.menuTest.menuAction())
+
 
         self.menuFile.addAction(self.actionOpen_File)
         self.menuFile.addAction(self.actionSave_As)
@@ -388,13 +388,7 @@ class Ui_MainWindow(QMainWindow):
         self.actionGray.triggered.connect(self.Gray)
         self.actionCoklat.triggered.connect(self.Coklat)
         self.actionMerah.triggered.connect(self.Merah)
-        py_files = ['crop.py', 'dilatasi.py', 'morfologi.py', 'ROI.py', 'segmentasi_citra.py', 'translasi.py', 'treshold.py', 'unsharp_masking.py']
-        for file in py_files:
-            # Removing .py extension
-            name = os.path.splitext(file)[0]
-            action = QAction(name, self)
-            action.triggered.connect(lambda checked, file=file: self.runPythonScript(file))
-            self.menubar.addAction(action)
+        
         self.setGeometry(100, 100, 800, 600)
         self.show()
         self.retranslateUi(MainWindow)
@@ -424,9 +418,7 @@ class Ui_MainWindow(QMainWindow):
 
         
         #untuk menambahkan nama pada menu item 
-        self.menuUniform.setTitle(_translate("MainWindow","Uniform"))
-        self.menuTest.setTitle(_translate("MainWindow","New Sub Menu"))
-        self.menuSubTest.setTitle(_translate("MainWindow","test inside"))
+        self.menuUniform.setTitle(_translate("MainWindow","Other"))
         #untuk mengeset nama action
         self.actionUniformScaling.setText(_translate("MainWindow","Uniform Scaling"))
         #untuk mengeset nama action
