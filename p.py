@@ -11,6 +11,9 @@ import matplotlib.pyplot as plt
 from PIL import Image
 import os
 import subprocess
+import platform
+
+
 
 class Ui_MainWindow(QMainWindow):
     def __init__(self):
@@ -393,10 +396,30 @@ class Ui_MainWindow(QMainWindow):
         self.show()
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
-        
     def runPythonScript(self, file_name):
         script_path = os.path.join('feature', file_name)
-        subprocess.run(['python', script_path])
+        
+        # Cek sistem operasi
+        os_type = platform.system()
+        
+        if os_type == "Windows":
+            # Jalankan script untuk Windows
+            subprocess.run(['python', script_path])
+        elif os_type == "Darwin":
+            # Jalankan script untuk Mac
+            
+            # Anda bisa menggunakan 'brew' untuk menginstall python jika belum ada
+            # Ini hanyalah contoh, sesuaikan perintahnya sesuai kebutuhan
+            # subprocess.run(['brew', 'install', 'python3'])
+            
+            # Kemudian jalankan script python
+            subprocess.run(['/opt/homebrew/bin/python3', script_path])
+        else:
+            print("Sistem operasi tidak dikenali")
+
+    # Pengujian fungsi
+    # runPythonScript(ObjekSelfPalsu, 'nama_file.py')  # Gantikan ObjekSelfPalsu dengan objek self yang sesuai
+
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
