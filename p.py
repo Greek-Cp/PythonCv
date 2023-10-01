@@ -1,41 +1,76 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QFileDialog
-from PyQt5.QtWidgets import QMainWindow, QLabel, QVBoxLayout, QWidget, QScrollArea, QPushButton, QAction,QGridLayout
+from PyQt5.QtWidgets import QMainWindow, QLabel, QVBoxLayout, QWidget, QScrollArea, QPushButton, QAction , QGridLayout,QApplication
+from PyQt5.QtGui import QPixmap, QImage
+from PyQt5.QtCore import QTimer
 from aritmatika import Ui_Aritmatika as p
 import numpy as np
 import sys
 import cv2
 import matplotlib.pyplot as plt
+from PIL import Image
+import os
+import subprocess
 
+class Ui_MainWindow(QMainWindow):
+    def __init__(self):
+        super(Ui_MainWindow, self).__init__()
+        self.setupUi(self)
+        dark_stylesheet = '''
+        QWidget {
+            background-color: #1F1F1F;
+            color: #FFFFFF;
+        }
+        QLabel {
+            border: 2px solid #FFFFFF;
+            border-radius: 4px;
+        }
+        QMenu::item:selected {
+            background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1, stop:0 #C147E9, stop:1 #8823D5);
+            color: #FFFFFF;
+        }
+        QMenuBar::item:selected {
+            background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1, stop:0 #C147E9, stop:1 #8823D5);
+            color: #FFFFFF;
+            border-radius: 8px;
+            border: 1px solid #FFFFFF;
+        }
+        QMenuBar::item {
+            padding: 5px 10px;
+        }
+        '''
 
-class Ui_MainWindow(object):
-    def setupUi(self, MainWindow):
+        self.setStyleSheet(dark_stylesheet)
+    def animate_title(self):
+        titles = ["Mata Kuliah PCV", "Yanuar Tri Laksono(E41210753)", "TESTING", "APP"]
+        self.setWindowTitle(titles[self.counter])
+        self.counter = (self.counter + 1) % len(titles)
+        
+    def setupUi(self,MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(800, 366)
+        MainWindow.resize(1200,800)
+        
+        
+        # Setup timer for title animation
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.animate_title)
+        self.counter = 0
+        self.timer.start(1000)  # Update every 1 second
         grid_layout = QGridLayout()
+        
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
-        self.label = QtWidgets.QLabel(self.centralwidget)
-        self.label.setGeometry(QtCore.QRect(10, 10, 381, 281))
-        self.label.setFrameShape(QtWidgets.QFrame.Box)
-        self.label.setText("")
-        self.label.setScaledContents(True)
-        self.label.setObjectName("label")
-        self.beforeImageView = QLabel(self.centralwidget)
-        self.beforeImageView.setStyleSheet("border: 2px solid black;")
-        self.beforeImageView.setObjectName("beforeImageView")
-        grid_layout.addWidget(self.beforeImageView, 0, 0)
-        
-        self.label_3 = QtWidgets.QLabel(self.centralwidget)
-        self.label_3.setGeometry(QtCore.QRect(10, 300, 241, 16))
-        self.label_3.setFrameShape(QtWidgets.QFrame.Box)
-        self.label_3.setText("")
-        self.label_3.setObjectName("label_3")
-        self.afterImageView = QLabel(self.centralwidget)
-        self.afterImageView.setStyleSheet("border: 2px solid black;")
-        self.afterImageView.setObjectName("afterImageView")
-        grid_layout.addWidget(self.afterImageView, 0, 1)
+        self.centralwidget.setLayout(grid_layout)
         MainWindow.setCentralWidget(self.centralwidget)
+        self.beforeImageView = QtWidgets.QLabel(self.centralwidget)
+        self.beforeImageView.setObjectName("beforeImageView")
+        self.beforeImageView.setStyleSheet("border: 2px solid black;")
+        self.afterImageView = QtWidgets.QLabel(self.centralwidget)
+        self.afterImageView.setObjectName("afterImageView")
+        grid_layout.addWidget(self.beforeImageView, 0, 0)
+        self.afterImageView.setStyleSheet("border: 2px solid black;")
+        grid_layout.addWidget(self.afterImageView, 0, 1)
+
         self.statusbar = QtWidgets.QStatusBar(MainWindow)
         self.statusbar.setObjectName("statusbar")
         MainWindow.setStatusBar(self.statusbar)
@@ -353,10 +388,21 @@ class Ui_MainWindow(object):
         self.actionGray.triggered.connect(self.Gray)
         self.actionCoklat.triggered.connect(self.Coklat)
         self.actionMerah.triggered.connect(self.Merah)
-
+        py_files = ['crop.py', 'dilatasi.py', 'morfologi.py', 'ROI.py', 'segmentasi_citra.py', 'translasi.py', 'treshold.py', 'unsharp_masking.py']
+        for file in py_files:
+            # Removing .py extension
+            name = os.path.splitext(file)[0]
+            action = QAction(name, self)
+            action.triggered.connect(lambda checked, file=file: self.runPythonScript(file))
+            self.menubar.addAction(action)
+        self.setGeometry(100, 100, 800, 600)
+        self.show()
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
-
+        
+    def runPythonScript(self, file_name):
+        script_path = os.path.join('feature', file_name)
+        subprocess.run(['python', script_path])
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
@@ -451,9 +497,9 @@ class Ui_MainWindow(object):
         self.actionRobert.setText(_translate("mainWindow" , "Robert"))
     
     def prewitt(self):
-        if self.label.pixmap() is not None:
+        if self.beforeImageView.pixmap() is not None:
             # Convert QPixmap to QImage for image processing
-            input_qimage = self.label.pixmap().toImage()
+            input_qimage = self.beforeImageView.pixmap().toImage()
             width = input_qimage.width()
             height = input_qimage.height()
 
@@ -479,12 +525,12 @@ class Ui_MainWindow(object):
 
             # Convert QImage to QPixmap for display
             p = QtGui.QPixmap.fromImage(output_qimage)
-            self.beforeImageView.setPixmap(p)
-            self.beforeImageView.setScaledContents(True)
+            self.afterImageView.setPixmap(p)
+            self.afterImageView.setScaledContents(True)
             
     def Kuning(self):
-        if self.label is not None:
-            image = self.label.pixmap()
+        if self.beforeImageView is not None:
+            image = self.beforeImageView.pixmap()
             inputan_image = image.toImage()
 
             for x in range(image.width()):
@@ -499,12 +545,12 @@ class Ui_MainWindow(object):
                     inputan_image.setPixelColor(x, y, QtGui.QColor(r, g, pixel.blue()))
 
             p = QtGui.QPixmap.fromImage(inputan_image)
-            self.beforeImageView.setPixmap(p)
-            self.beforeImageView.setScaledContents(True)
+            self.afterImageView.setPixmap(p)
+            self.afterImageView.setScaledContents(True)
 
     def Orange(self):
-        if self.label is not None:
-            image = self.label.pixmap()   
+        if self.beforeImageView is not None:
+            image = self.beforeImageView.pixmap()   
             inputan_image = image.toImage()
 
             for x in range(image.width()):
@@ -521,12 +567,12 @@ class Ui_MainWindow(object):
                     inputan_image.setPixelColor(x, y, QtGui.QColor(r, g, b))
 
             p= QtGui.QPixmap.fromImage(inputan_image)
-            self.beforeImageView.setPixmap(p)
-            self.beforeImageView.setScaledContents(True)
+            self.afterImageView.setPixmap(p)
+            self.afterImageView.setScaledContents(True)
 
     def Cyan(self):
-        if self.label is not None:
-            image = self.label.pixmap()
+        if self.beforeImageView is not None:
+            image = self.beforeImageView.pixmap()
             inputan_image = image.toImage()
 
             for x in range(image.width()):
@@ -542,12 +588,12 @@ class Ui_MainWindow(object):
                     inputan_image.setPixelColor(x, y, QtGui.QColor(r, g, b))
 
             p= QtGui.QPixmap.fromImage(inputan_image)
-            self.beforeImageView.setPixmap(p)
-            self.beforeImageView.setScaledContents(True)
+            self.afterImageView.setPixmap(p)
+            self.afterImageView.setScaledContents(True)
 
     def Purple(self):
-        if self.label is not None:
-            image = self.label.pixmap()
+        if self.beforeImageView is not None:
+            image = self.beforeImageView.pixmap()
             inputan_image = image.toImage()
 
             for x in range(image.width()):
@@ -563,12 +609,12 @@ class Ui_MainWindow(object):
                     inputan_image.setPixelColor(x, y, QtGui.QColor(r, g, b))
 
             p = QtGui.QPixmap.fromImage(inputan_image)
-            self.beforeImageView.setPixmap(p)
-            self.beforeImageView.setScaledContents(True)
+            self.afterImageView.setPixmap(p)
+            self.afterImageView.setScaledContents(True)
 
     def Gray(self):
-        if self.label is not None:
-            image = self.label.pixmap()
+        if self.beforeImageView is not None:
+            image = self.beforeImageView.pixmap()
             inputan_image = image.toImage()
 
             for x in range(image.width()):
@@ -582,12 +628,12 @@ class Ui_MainWindow(object):
                     inputan_image.setPixelColor(x, y, QtGui.QColor(grayscale_value, grayscale_value, grayscale_value))
 
             p= QtGui.QPixmap.fromImage(inputan_image)
-            self.beforeImageView.setPixmap(p)
-            self.beforeImageView.setScaledContents(True)
+            self.afterImageView.setPixmap(p)
+            self.afterImageView.setScaledContents(True)
             
     def Coklat(self):
-        if self.label is not None:
-            image = self.label.pixmap()
+        if self.beforeImageView is not None:
+            image = self.beforeImageView.pixmap()
             inputan_image = image.toImage()
 
             for x in range(image.width()):
@@ -603,12 +649,12 @@ class Ui_MainWindow(object):
                     inputan_image.setPixelColor(x, y, QtGui.QColor(r, g, b))
 
             p = QtGui.QPixmap.fromImage(inputan_image)
-            self.beforeImageView.setPixmap(p)
-            self.beforeImageView.setScaledContents(True)
+            self.afterImageView.setPixmap(p)
+            self.afterImageView.setScaledContents(True)
 
     def Merah(self):
-        if self.label is not None:
-            image = self.label.pixmap()
+        if self.beforeImageView is not None:
+            image = self.beforeImageView.pixmap()
             inputan_image = image.toImage()
 
             for x in range(image.width()):
@@ -624,12 +670,12 @@ class Ui_MainWindow(object):
                     inputan_image.setPixelColor(x, y, QtGui.QColor(r, g, b))
 
             p= QtGui.QPixmap.fromImage(inputan_image)
-            self.beforeImageView.setPixmap(p)
-            self.beforeImageView.setScaledContents(True)
+            self.afterImageView.setPixmap(p)
+            self.afterImageView.setScaledContents(True)
                     
     def identity(self):
-        if self.label.pixmap() is not None:
-            inputImage = self.label.pixmap().toImage()
+        if self.beforeImageView.pixmap() is not None:
+            inputImage = self.beforeImageView.pixmap().toImage()
             width = inputImage.width()
             height = inputImage.height()
             outputImage = QtGui.QImage(width , height , QtGui.QImage.Format_RGB32)
@@ -666,8 +712,8 @@ class Ui_MainWindow(object):
                     outputImage.setPixel(i, j, QtGui.QColor(c1r, c1g, c1b).rgb())
 
             p = QtGui.QPixmap.fromImage(outputImage)
-            self.beforeImageView.setPixmap(p)
-            self.beforeImageView.setScaledContents(True)
+            self.afterImageView.setPixmap(p)
+            self.afterImageView.setScaledContents(True)
 
 
     @staticmethod
@@ -679,9 +725,9 @@ class Ui_MainWindow(object):
         return x
     
     def erosiKotak(self, size):
-        if self.label:
+        if self.beforeImageView:
             # Convert QPixmap to QImage for image processing
-            input_qimage = self.label.pixmap().toImage()
+            input_qimage = self.beforeImageView.pixmap().toImage()
             width = input_qimage.width()
             height = input_qimage.height()
 
@@ -711,8 +757,8 @@ class Ui_MainWindow(object):
 
             # Convert QImage to QPixmap for display
             p = QtGui.QPixmap.fromImage(output_qimage)
-            self.beforeImageView.setPixmap(p)
-            self.beforeImageView.setScaledContents(True)   
+            self.afterImageView.setPixmap(p)
+            self.afterImageView.setScaledContents(True)   
             
     def erosikotak3(self):
         self.erosiKotak(3)
@@ -721,9 +767,9 @@ class Ui_MainWindow(object):
         self.erosiKotak(5)
     
     def dilasiKotak(self, size):
-        if self.label:
+        if self.beforeImageView:
             # Convert QPixmap to QImage for image processing
-            input_qimage = self.label.pixmap().toImage()
+            input_qimage = self.beforeImageView.pixmap().toImage()
             width = input_qimage.width()
             height = input_qimage.height()
 
@@ -753,8 +799,8 @@ class Ui_MainWindow(object):
 
             # Convert QImage to QPixmap for display
             p = QtGui.QPixmap.fromImage(output_qimage)
-            self.beforeImageView.setPixmap(p)
-            self.beforeImageView.setScaledContents(True)
+            self.afterImageView.setPixmap(p)
+            self.afterImageView.setScaledContents(True)
     def dilasikotak3(self):
         self.dilasiKotak(3)
         
@@ -762,9 +808,9 @@ class Ui_MainWindow(object):
         self.dilasiKotak(5)
         
     def ErosiX(self):
-        if self.label:
+        if self.beforeImageView:
             # Convert QPixmap to QImage for image processing
-            input_qimage = self.label.pixmap().toImage()
+            input_qimage = self.beforeImageView.pixmap().toImage()
             width = input_qimage.width()
             height = input_qimage.height()
 
@@ -804,13 +850,13 @@ class Ui_MainWindow(object):
 
             # Convert QImage to QPixmap for display
             p= QtGui.QPixmap.fromImage(output_qimage)
-            self.beforeImageView.setPixmap(p)
-            self.beforeImageView.setScaledContents(True)
+            self.afterImageView.setPixmap(p)
+            self.afterImageView.setScaledContents(True)
             
     def DilasiX(self):
-        if self.label:
+        if self.beforeImageView:
             # Convert QPixmap to QImage for image processing
-            input_qimage = self.label.pixmap().toImage()
+            input_qimage = self.beforeImageView.pixmap().toImage()
             width = input_qimage.width()
             height = input_qimage.height()
 
@@ -850,13 +896,13 @@ class Ui_MainWindow(object):
 
             # Convert QImage to QPixmap for display
             p= QtGui.QPixmap.fromImage(output_qimage)
-            self.beforeImageView.setPixmap(p)
-            self.beforeImageView.setScaledContents(True)
+            self.afterImageView.setPixmap(p)
+            self.afterImageView.setScaledContents(True)
                                                           
     def sobelEdgeDetection(self):
-        if self.label.pixmap() is not None:
+        if self.beforeImageView.pixmap() is not None:
             # Convert QPixmap to QImage for image processing
-            input_qimage = self.label.pixmap().toImage()
+            input_qimage = self.beforeImageView.pixmap().toImage()
             width = input_qimage.width()
             height = input_qimage.height()
 
@@ -888,13 +934,13 @@ class Ui_MainWindow(object):
 
             # Convert QImage to QPixmap for display
             p = QtGui.QPixmap.fromImage(output_qimage)
-            self.beforeImageView.setPixmap(p)
-            self.beforeImageView.setScaledContents(True)
+            self.afterImageView.setPixmap(p)
+            self.afterImageView.setScaledContents(True)
             
     def RobertFilter(self):
-        if self.label.pixmap() is not None:
+        if self.beforeImageView.pixmap() is not None:
             # Convert QPixmap to QImage for image processing
-            input_qimage = self.label.pixmap().toImage()
+            input_qimage = self.beforeImageView.pixmap().toImage()
             width = input_qimage.width()
             height = input_qimage.height()
 
@@ -923,8 +969,8 @@ class Ui_MainWindow(object):
 
             # Convert QImage to QPixmap for display
             p = QtGui.QPixmap.fromImage(output_qimage)
-            self.beforeImageView.setPixmap(p)
-            self.beforeImageView.setScaledContents(True)
+            self.afterImageView.setPixmap(p)
+            self.afterImageView.setScaledContents(True)
                 
     def HistogramEqGrayscale(self):
             width = self.image.width()
@@ -958,7 +1004,7 @@ class Ui_MainWindow(object):
                     equalized_image.setPixelColor(x, y, new_color)
             
             p = QtGui.QPixmap.fromImage(equalized_image)
-            self.beforeImageView.setPixmap(p)
+            self.afterImageView.setPixmap(p)
             self.image = equalized_image
             
     def FuzzyToRgb(self):
@@ -988,7 +1034,7 @@ class Ui_MainWindow(object):
             # Membuat gambar output dan menampilkannya di pbOutput
             output_image = QtGui.QImage(output_data.data, width, height, width * 3, QtGui.QImage.Format_RGB888)
             p = QtGui.QPixmap.fromImage(output_image)
-            self.beforeImageView.setPixmap(p)
+            self.afterImageView.setPixmap(p)
             self.image = output_image
             
     def fuzzyGrayScale(self):
@@ -1007,7 +1053,7 @@ class Ui_MainWindow(object):
         # Membuat gambar output dan menampilkannya di pbOutput
         output_image = QtGui.QImage(input_data.data, width, height, width, QtGui.QImage.Format_Grayscale8)
         p = QtGui.QPixmap.fromImage(output_image)
-        self.beforeImageView.setPixmap(p)
+        self.afterImageView.setPixmap(p)
         self.image = output_image
         
     def gaussian_blur3x3(self):
@@ -1037,11 +1083,11 @@ class Ui_MainWindow(object):
                 output_image.setPixelColor(i, j, QtGui.QColor(c1r, c1g, c1b))  # Use setPixelColor instead of setPixel
 
         p = QtGui.QPixmap.fromImage(output_image)
-        self.beforeImageView.setPixmap(p)
-        self.beforeImageView.setScaledContents(True)
+        self.afterImageView.setPixmap(p)
+        self.afterImageView.setScaledContents(True)
         
     def HighPassFilter(self):
-        input_qimage = self.label.pixmap().toImage()
+        input_qimage = self.beforeImageView.pixmap().toImage()
         width = input_qimage.width()
         height = input_qimage.height()
 
@@ -1071,8 +1117,8 @@ class Ui_MainWindow(object):
                 output_qimage.setPixel(x, y, QtGui.qRgb(r, g, b))
 
         p = QtGui.QPixmap.fromImage(output_qimage)
-        self.beforeImageView.setPixmap(p)
-        self.beforeImageView.setScaledContents(True)
+        self.afterImageView.setPixmap(p)
+        self.afterImageView.setScaledContents(True)
             
     def lowPassFilter(self):
         filterMatrix = [
@@ -1080,9 +1126,9 @@ class Ui_MainWindow(object):
             [1, 4, 1],
             [1, 1, 1]
         ]
-        imagee = self.label.pixmap().toImage()
+        imagee = self.beforeImageView.pixmap().toImage()
         output_image = QtGui.QImage(imagee)
-        # width, height = self.label.width(), self.label.height()
+        # width, height = self.beforeImageView.width(), self.beforeImageView.height()
 
         for x in range(output_image.width()):
             for y in range(output_image.height()):
@@ -1106,8 +1152,8 @@ class Ui_MainWindow(object):
                 output_image.setPixel(x, y, QtGui.qRgb(r, g, b))
 
         p = QtGui.QPixmap.fromImage(output_image)
-        self.beforeImageView.setPixmap(p)
-        self.beforeImageView.setScaledContents(True)
+        self.afterImageView.setPixmap(p)
+        self.afterImageView.setScaledContents(True)
         
         
     def sharpen(self):
@@ -1140,8 +1186,8 @@ class Ui_MainWindow(object):
                 output_image.setPixelColor(i, j, QtGui.QColor(c1r, c1g, c1b))  # Use setPixelColor instead of setPixel
 
         p = QtGui.QPixmap.fromImage(output_image)
-        self.beforeImageView.setPixmap(p)
-        self.beforeImageView.setScaledContents(True)    
+        self.afterImageView.setPixmap(p)
+        self.afterImageView.setScaledContents(True)    
     
     def gaussian_blur5x5(self):
         avgFilter = [[1, 4, 6,4,1], [4, 16, 24,16,4], [6, 24, 36,24,6],[4,16,24,16,3],[1,4,6,4,1]]
@@ -1170,11 +1216,11 @@ class Ui_MainWindow(object):
                 output_image.setPixelColor(i, j, QtGui.QColor(c1r, c1g, c1b))  # Use setPixelColor instead of setPixel
 
         p = QtGui.QPixmap.fromImage(output_image)
-        self.beforeImageView.setPixmap(p)
-        self.beforeImageView.setScaledContents(True)
+        self.afterImageView.setPixmap(p)
+        self.afterImageView.setScaledContents(True)
     
     def showInputHistogram(self):
-            pbalap = self.label.pixmap()
+            pbalap = self.beforeImageView.pixmap()
             input_image = pbalap.toImage()
             width = input_image.width()
             height = input_image.height()
@@ -1195,7 +1241,7 @@ class Ui_MainWindow(object):
             plt.show()
             
     def bitdepth(self, bit):
-            io = self.label.pixmap()
+            io = self.beforeImageView.pixmap()
             pbalappp = io.toImage()
             level = 255 / (2 ** bit - 1)
             
@@ -1208,8 +1254,8 @@ class Ui_MainWindow(object):
                     pbalappp.setPixel(i, j, QtGui.QColor(R, G, B).rgb())
 
             p = QtGui.QPixmap.fromImage(pbalappp)
-            self.beforeImageView.setPixmap(p)
-            self.beforeImageView.setScaledContents(True)
+            self.afterImageView.setPixmap(p)
+            self.afterImageView.setScaledContents(True)
             
     def onConvertClicked1(self):
         bit_depth = 1
@@ -1241,7 +1287,7 @@ class Ui_MainWindow(object):
             
     def showOutputHistogram(self):
         
-            pbalap = self.beforeImageView.pixmap()
+            pbalap = self.afterImageView.pixmap()
             input_image = pbalap.toImage()
             width = input_image.width()
             height = input_image.height()
@@ -1277,33 +1323,33 @@ class Ui_MainWindow(object):
         # check apakah terdapat path file
         if file_name:
             #Simpan gambar yang telah diformat
-            pixmap = self.beforeImageView.pixmap()
+            pixmap = self.afterImageView.pixmap()
             pixmap.save(file_name)
-            self.afterImageView.setText(file_name)
+           # self.label_4.setText(file_name)
             
     def rotateImage(self):
         rotation , ok = QtWidgets.QInputDialog.getInt(None , "Rotate Image","Enter rotation angle (degress):",0,-360,360)
         if ok:
-            current_pixmap = self.label.pixmap()
-            second_pixmap = self.beforeImageView.pixmap()
+            current_pixmap = self.beforeImageView.pixmap()
+            second_pixmap = self.afterImageView.pixmap()
             
-            if self.beforeImageView.pixmap() is None:
+            if self.afterImageView.pixmap() is None:
                     rotated_image = current_pixmap.transformed(QtGui.QTransform().rotate(rotation))
-                    self.beforeImageView.setPixmap(rotated_image)
-                    self.beforeImageView.setAlignment(QtCore.Qt.AlignCenter)
-                    self.beforeImageView.setScaledContents(True)
+                    self.afterImageView.setPixmap(rotated_image)
+                    self.afterImageView.setAlignment(QtCore.Qt.AlignCenter)
+                    self.afterImageView.setScaledContents(True)
                     self.image = rotated_image.toImage()
                     
             else:    
                     rotated_image = second_pixmap.transformed(QtGui.QTransform().rotate(rotation))
-                    self.beforeImageView.setPixmap(rotated_image)
-                    self.beforeImageView.setAlignment(QtCore.Qt.AlignCenter)
-                    self.beforeImageView.setScaledContents(True)
+                    self.afterImageView.setPixmap(rotated_image)
+                    self.afterImageView.setAlignment(QtCore.Qt.AlignCenter)
+                    self.afterImageView.setScaledContents(True)
                     self.image = rotated_image.toImage()
                                    
     def Invers(self):
         # Ambil pixmap dari pbInput
-        pixmap = self.label.pixmap()
+        pixmap = self.beforeImageView.pixmap()
         if pixmap:
             img = pixmap.toImage()
             width, height = img.width(), img.height()
@@ -1322,8 +1368,8 @@ class Ui_MainWindow(object):
 
             # Terapkan gambar invers pada pbOutput
             pixmap = QtGui.QPixmap.fromImage(img)
-            self.beforeImageView.setPixmap(pixmap)
-            self.beforeImageView.setScaledContents(True)
+            self.afterImageView.setPixmap(pixmap)
+            self.afterImageView.setScaledContents(True)
             self.image = img
                         
     def showAverage(self):
@@ -1340,9 +1386,10 @@ class Ui_MainWindow(object):
                 average.setPixelColor(x, y, grayscale_color)
         
         p = QtGui.QPixmap.fromImage(average) 
-        self.beforeImageView.setPixmap(p)
+        
         # self.image = average
           
+
     def showLuminance(self):
         width = self.image.width()
         height = self.image.height()
@@ -1357,32 +1404,42 @@ class Ui_MainWindow(object):
                 grayscale_image.setPixelColor(x, y, grayscale_color)
         
         p = QtGui.QPixmap.fromImage(grayscale_image) 
-        self.beforeImageView.setPixmap(p)
+        self.afterImageView.setPixmap(p)
         # self.image = grayscale_image
         
+
     def openFile(self):
-        options = QFileDialog.Options() # Inisialisasi opsi untuk dialog pemilihan berkas
-        options |= QFileDialog.ReadOnly # Menambahkan opsi mode baca saja ke dalam opsi dialog
-        # menghapus gambar dari label kedua
-        self.beforeImageView.clear()
-        self.label_3.setText("")
-        self.afterImageView.setText("")
-        # menampung file path dari dialog open file dan difilter hanya format png , jpg , bmp
-        file_name, _ = QFileDialog.getOpenFileName(None, "Open Image File", "", "Images (*.png *.jpg *.bmp *.jpeg);;All Files (*)", options=options)
-        # check apakah terdapat path file
-        if file_name:
-            # untuk membuat objek QImage dari suatu berkas gambar dengan nama file_name
-            image = QtGui.QImage(file_name)
-            # check varibale apakah tidak kosong
-            if not image.isNull():
-                # simpan gambar pada variable pixmap
-                pixmap = QtGui.QPixmap.fromImage(image)
-                self.label.setPixmap(pixmap)  # Set gambar pada label
-                self.label.setScaledContents(True) # set  kontennya agar sesuai dengan ukuran label.
-                self.image = image # menetapkan objek QImage yang sudah dibuat sebelumnya (dalam contoh kode sebelumnya) ke atribut self.image dari kelas atau objek saat ini
-                self.checkHisto = file_name
-                self.label_3.setText(file_name)
-                         
+        options = QFileDialog.Options()
+        options |= QFileDialog.ReadOnly
+        filepath, _ = QFileDialog.getOpenFileName(None, "Open Image", "", "Images (*.png *.jpg *.bmp *.jpeg);;All Files (*)", options=options)
+        
+        if filepath:
+            # Directly use QImage to read the image
+            self.image = QImage(filepath)
+            
+            # If the image isn't null, proceed with setting it up
+            if not self.image.isNull():
+                h = self.image.height()
+                w = self.image.width()
+                
+                self.resize(w, h)  # Adjust window size to fit the image
+                
+                pixmap = QPixmap.fromImage(self.image)
+                self.beforeImageView.setPixmap(pixmap)
+                self.beforeImageView.setScaledContents(True)
+
+                # If you still need a numpy array version of the image,
+                # convert QImage to numpy array and store in a separate attribute
+                ptr = self.image.bits()
+                ptr.setsize(self.image.byteCount())
+                self.image_np = np.array(ptr).reshape(h, w, 4)  # 4 for RGBA
+
+    def show_image(self, image, pos='before'):
+        pixmap = QPixmap.fromImage(image)
+        if pos == 'before':
+            self.beforeImageView.setPixmap(pixmap)
+        else:
+            self.afterImageView.setPixmap(pixmap)
     def showLightness(self):
         width = self.image.width()
         height = self.image.height()
@@ -1397,7 +1454,7 @@ class Ui_MainWindow(object):
                 lightness.setPixelColor(x, y, grayscale_color)
         
         p = QtGui.QPixmap.fromImage(lightness) 
-        self.beforeImageView.setPixmap(p)
+        self.afterImageView.setPixmap(p)
         # self.image = lightness
         
     def histogram(self):
@@ -1431,10 +1488,10 @@ class Ui_MainWindow(object):
         # Create a QImage from the numpy array
         adjusted_qimage = QtGui.QImage(adjusted_image.data, width, height, width * 4, QtGui.QImage.Format_RGBA8888)
 
-        # Create a QPixmap from the QImage and set it to self.beforeImageView
+        # Create a QPixmap from the QImage and set it to self.afterImageView
         adjusted_pixmap = QtGui.QPixmap.fromImage(adjusted_qimage)
-        self.beforeImageView.setPixmap(adjusted_pixmap)
-        self.beforeImageView.setAlignment(QtCore.Qt.AlignCenter)
+        self.afterImageView.setPixmap(adjusted_pixmap)
+        self.afterImageView.setAlignment(QtCore.Qt.AlignCenter)
         self.image = adjusted_qimage
 
     def open_brightness_contrast_dialog(self):
@@ -1459,8 +1516,8 @@ class Ui_MainWindow(object):
                     flipped_image.setPixelColor(width - 1 - x, y, pixel_color)       
 
             flipped_pixmap = QtGui.QPixmap.fromImage(flipped_image)
-            self.beforeImageView.setPixmap(flipped_pixmap)
-            self.beforeImageView.setAlignment(QtCore.Qt.AlignCenter)
+            self.afterImageView.setPixmap(flipped_pixmap)
+            self.afterImageView.setAlignment(QtCore.Qt.AlignCenter)
             self.image = flipped_image
             
     def flip_vertical(self):
@@ -1474,19 +1531,16 @@ class Ui_MainWindow(object):
                     flipped_image.setPixelColor(x, height - 1 - y, pixel_color) 
 
             flipped_pixmap = QtGui.QPixmap.fromImage(flipped_image)
-            self.beforeImageView.setPixmap(flipped_pixmap)
-            self.beforeImageView.setAlignment(QtCore.Qt.AlignCenter)
+            self.afterImageView.setPixmap(flipped_pixmap)
+            self.afterImageView.setAlignment(QtCore.Qt.AlignCenter)
             self.image = flipped_image        
              
     def exitApplication(self):
         # untuk keluar dari aplikasi
         QtWidgets.qApp.quit()    
         
-if __name__ == "__main__":
-    import sys
-    app = QtWidgets.QApplication(sys.argv)
-    MainWindow = QtWidgets.QMainWindow()
-    ui = Ui_MainWindow()
-    ui.setupUi(MainWindow)
-    MainWindow.show()
+if __name__ == '__main__':
+    app = QApplication(sys.argv)
+    window = Ui_MainWindow()
+    window.show()
     sys.exit(app.exec_())

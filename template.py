@@ -1,5 +1,6 @@
-from PyQt5.QtWidgets import QMainWindow, QFileDialog, QApplication, QLabel, QMessageBox, QWidget, QGridLayout
+from PyQt5.QtWidgets import QMainWindow, QFileDialog, QApplication, QLabel, QWidget, QGridLayout
 from PyQt5.QtGui import QPixmap, QImage
+from PyQt5.QtCore import QTimer
 import cv2
 import numpy as np
 import sys
@@ -9,6 +10,12 @@ class Ui_MainWindow(QMainWindow):
         super(Ui_MainWindow, self).__init__()
         self.setupUi(self)
         self.setStyleSheet("background-color: lightgrey;")
+        
+        # Setup timer for title animation
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.animate_title)
+        self.counter = 0
+        self.timer.start(1000)  # Update every 1 second
 
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
@@ -38,8 +45,11 @@ class Ui_MainWindow(QMainWindow):
         self.afterImageView = QLabel(self.centralwidget)
         self.afterImageView.setStyleSheet("border: 2px solid black;")
         grid_layout.addWidget(self.afterImageView, 0, 1)
-        
-        
+    
+    def animate_title(self):
+        titles = ["My Dark Mode App", "Welcome!", "Enjoy!", ""]
+        self.setWindowTitle(titles[self.counter])
+        self.counter = (self.counter + 1) % len(titles)
 
     def open_image(self):
         options = QFileDialog.Options()
@@ -47,8 +57,7 @@ class Ui_MainWindow(QMainWindow):
         if filepath:
             self.image = cv2.imread(filepath)
             h, w, _ = self.image.shape
-            # Ubah ukuran jendela sesuai dengan ukuran gambar
-            self.resize(w ,h) # Penyesuaian dilakukan untuk menampung dua gambar dan beberapa padding
+            self.resize(w, h)
             self.show_image(self.image, 'before')
 
     def save_image(self):
@@ -67,7 +76,6 @@ class Ui_MainWindow(QMainWindow):
         else:
             self.afterImageView.setPixmap(pixmap)
 
-    
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     window = Ui_MainWindow()
